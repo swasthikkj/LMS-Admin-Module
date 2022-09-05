@@ -6,6 +6,8 @@ import java.util.Optional;
 import javax.validation.Valid;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -37,36 +39,46 @@ public class AdminController {
 	 * Purpose:add admin
 	 */
 	@PostMapping("/addAdmin")
-	public AdminModel addAdmin(@Valid @RequestBody AdminDTO adminDTO) {
-		return adminService.addAdmin(adminDTO);		
+	public ResponseEntity<Response> addAdmin(@Valid @RequestBody AdminDTO adminDTO) {
+		AdminModel adminModel = adminService.addAdmin(adminDTO);
+		Response response = new Response(200, "admin added successfully", adminModel);
+		return new ResponseEntity<>(response, HttpStatus.OK);		
 	}
 	/**
 	 * Purpose:update admin
 	 */
 	@PutMapping("updateAdmin/{id}")
-	public AdminModel updateAdmin(@Valid @RequestBody AdminDTO adminDTO, @PathVariable Long id, @RequestHeader String token) {
-		return adminService.updateAdmin(adminDTO, id, token);
+	public ResponseEntity<Response> updateAdmin(@Valid @RequestBody AdminDTO adminDTO, @PathVariable Long id, @RequestHeader String token) {
+		AdminModel adminModel = adminService.updateAdmin(adminDTO, id, token);
+		Response response = new Response(200, "admin updated successfully", adminModel);
+		return new ResponseEntity<>(response, HttpStatus.OK);
 	}
 	/**
 	 * Purpose:get admin by id
 	 */
 	@GetMapping("/getAdminData/{id}")
-    public Optional<AdminModel> getAdminById(@PathVariable Long id, @RequestHeader String token) {
-        return adminService.getAdminById(id, token);
+    public ResponseEntity<Response> getAdminById(@PathVariable Long id, @RequestHeader String token) {
+		Optional<AdminModel> adminModel = adminService.getAdminById(id, token);
+		Response response = new Response(200, "admin fetched by id successfully", adminModel);
+		return new ResponseEntity<>(response, HttpStatus.OK);
     }
 	/**
 	 * Purpose:get all admins
 	 */
 	@GetMapping("/getAllAdmins")
-	public List<AdminModel> getAllAdmins(String token) {
-		return adminService.getAllAdmins(token);	
+	public ResponseEntity<Response> getAllAdmins(@RequestHeader String token) {
+		List<AdminModel> adminModel = adminService.getAllAdmins(token);
+		Response response = new Response(200, "All admins fetched successfully", adminModel);
+		return new ResponseEntity<>(response, HttpStatus.OK);	
 	}
 	/**
 	 * Purpose:delete admin
 	 */
 	@DeleteMapping("deleteAdmin/{id}")
-	public AdminModel deleteAdmin(@PathVariable Long id,  @RequestHeader String token) {
-		return adminService.deleteAdmin(id, token);
+	public ResponseEntity<Response> deleteAdmin(@PathVariable Long id,  @RequestHeader String token) {
+		AdminModel adminModel = adminService.deleteAdmin(id, token);
+		Response response = new Response(200, "admin deleted successfully", adminModel);
+		return new ResponseEntity<>(response, HttpStatus.OK);
 	}
 	/**
 	 * Purpose:login to generate token
@@ -91,5 +103,10 @@ public class AdminController {
     @PutMapping("/changepassword/{token}")
     public AdminModel changePassword(@PathVariable("token") String token, @RequestParam String password) {
         return adminService.changePassword(token, password);
+    }
+    
+    @GetMapping("/validateuser/{token}")
+    public Boolean validateUser(@PathVariable String token) {
+    	return adminService.validateUser(token);
     }
 }

@@ -5,6 +5,7 @@ import java.util.Optional;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.web.client.RestTemplate;
 
 import com.bridgelabz.adminmodule.dto.AdminDTO;
 import com.bridgelabz.adminmodule.exception.CustomNotFoundException;
@@ -24,6 +25,9 @@ public class AdminService implements IAdminService {
 	@Autowired
 	MailService mailService;
 
+	@Autowired
+	RestTemplate restTemplate;
+
 	@Override
 	public AdminModel addAdmin(AdminDTO adminDTO) {
 		AdminModel model = new AdminModel(adminDTO);
@@ -36,49 +40,65 @@ public class AdminService implements IAdminService {
 
 	@Override
 	public AdminModel updateAdmin(AdminDTO adminDTO, Long id, String token) {
-		Long adminId = tokenUtil.decodeToken(token);
-		Optional<AdminModel> isAdminPresent = adminRepository.findById(id);
-		if(isAdminPresent.isPresent()) {
-			isAdminPresent.get().setFirstName(adminDTO.getFirstName());
-			isAdminPresent.get().setLastName(adminDTO.getLastName());
-			isAdminPresent.get().setMobileNumber(adminDTO.getMobileNumber());
-			isAdminPresent.get().setEmailId(adminDTO.getEmailId());
-			isAdminPresent.get().setPassword(adminDTO.getPassword());
-			isAdminPresent.get().setCreateStamp(adminDTO.getCreateStamp().now());
-			isAdminPresent.get().setProfilePath(adminDTO.getProfilePath());
-			isAdminPresent.get().setStatus(adminDTO.isStatus());
-			isAdminPresent.get().setUpdatedStamp(adminDTO.getUpdatedStamp());
-			adminRepository.save(isAdminPresent.get());
-			return isAdminPresent.get();
+		//		Long adminId = tokenUtil.decodeToken(token);
+		boolean isUserPresent = restTemplate.getForObject("http://localhost:8075/bankdetailsmodule/validateuser/" + token, Boolean.class);
+		if (isUserPresent) {
+			Optional<AdminModel> isAdminPresent = adminRepository.findById(id);
+			if(isAdminPresent.isPresent()) {
+				isAdminPresent.get().setFirstName(adminDTO.getFirstName());
+				isAdminPresent.get().setLastName(adminDTO.getLastName());
+				isAdminPresent.get().setMobileNumber(adminDTO.getMobileNumber());
+				isAdminPresent.get().setEmailId(adminDTO.getEmailId());
+				isAdminPresent.get().setPassword(adminDTO.getPassword());
+				isAdminPresent.get().setCreateStamp(adminDTO.getCreateStamp().now());
+				isAdminPresent.get().setProfilePath(adminDTO.getProfilePath());
+				isAdminPresent.get().setStatus(adminDTO.isStatus());
+				isAdminPresent.get().setUpdatedStamp(adminDTO.getUpdatedStamp());
+				adminRepository.save(isAdminPresent.get());
+				return isAdminPresent.get();
+			}
+			throw new CustomNotFoundException(400, "not present");
 		}
-		throw new CustomNotFoundException(400,"not present");
+		throw new CustomNotFoundException(400, "invalid token");
 	}
 
 	@Override
 	public Optional<AdminModel> getAdminById(Long id, String token) {
-		return adminRepository.findById(id);
+		boolean isUserPresent = restTemplate.getForObject("http://localhost:8075/bankdetailsmodule/validateuser/" + token, Boolean.class);
+		if (isUserPresent) {
+			return adminRepository.findById(id);
+		}
+		throw new CustomNotFoundException(400, "invalid token");
 	}
 
 	@Override
 	public List<AdminModel> getAllAdmins(String token) {
-		Long adminId = tokenUtil.decodeToken(token);
-		List<AdminModel> getAllAdmins = adminRepository.findAll();
-		if(getAllAdmins.size()>0) {
-			return getAllAdmins;
-		} else {
-			throw new CustomNotFoundException(400, "Admin not present");
-		}	
+		//		Long adminId = tokenUtil.decodeToken(token);
+		boolean isUserPresent = restTemplate.getForObject("http://localhost:8075/bankdetailsmodule/validateuser/" + token, Boolean.class);
+		if (isUserPresent) {
+			List<AdminModel> getAllAdmins = adminRepository.findAll();
+			if(getAllAdmins.size()>0) {
+				return getAllAdmins;
+			} else {
+				throw new CustomNotFoundException(400, "Admin not present");
+			}	
+		}
+		throw new CustomNotFoundException(400, "invalid token");
 	}
 
 	@Override
 	public AdminModel deleteAdmin(Long id, String token) {
-		Long adminId = tokenUtil.decodeToken(token);
-		Optional<AdminModel> isAdminPresent = adminRepository.findById(id);
-		if(isAdminPresent.isPresent()) {
-			adminRepository.delete(isAdminPresent.get());
-			return isAdminPresent.get();
+		//		Long adminId = tokenUtil.decodeToken(token);
+		boolean isUserPresent = restTemplate.getForObject("http://localhost:8075/bankdetailsmodule/validateuser/" + token, Boolean.class);
+		if (isUserPresent) {
+			Optional<AdminModel> isAdminPresent = adminRepository.findById(id);
+			if(isAdminPresent.isPresent()) {
+				adminRepository.delete(isAdminPresent.get());
+				return isAdminPresent.get();
+			}
+			throw new CustomNotFoundException(400, "Admin not found");
 		}
-		throw new CustomNotFoundException(400, "Admin not found");
+		throw new CustomNotFoundException(400, "invalid token");
 	}
 
 	@Override
@@ -114,6 +134,15 @@ public class AdminService implements IAdminService {
 			adminRepository.save(isTokenPresent.get());
 			return isTokenPresent.get();
 		}
+		throw new CustomNotFoundException(400, "Token not found");
+	}
+
+	@Override
+	public Boolean validateUser(String token) {
+		Long decode = tokenUtil.decodeToken(token);
+		Optional<AdminModel> isTokenPresent = adminRepository.findById(decode);
+		if (isTokenPresent.isPresent())
+			return true;
 		throw new CustomNotFoundException(400, "Token not found");
 	}
 }

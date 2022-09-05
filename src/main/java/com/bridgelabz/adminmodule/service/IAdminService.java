@@ -23,5 +23,7 @@ public interface IAdminService {
 	AdminModel changePassword(String token, String password);
 
 	Response resetPassword(String emailId);
+
+	Boolean validateUser(String token);
 	
 }
